@@ -1,6 +1,5 @@
 #This is a password generator which creates a password and sends it to your personal email so you dont forget it.
 
-
 #Password Generator App
 
 import smtplib
@@ -42,14 +41,15 @@ sendEmail = input("Send email with these details ? (y/n)").lower()
 
 #Send through email the data created:
 def functiontoSendEmail():
-    userSetPassword = input("\nRoot Password: ")
+    senderEmail = input("\nSet the email from where this should be sent: ")
+    userSetPassword = input("Email Password: ")
     time.sleep(1)
     emailSendTo = input("Set the email where you want to receive this details: ")
 
     #Starting Email Server:
     host = "smtp.gmail.com"
     port = "587"
-    user = "tasantos.esteves@gmail.com"
+    user = senderEmail
     password = userSetPassword
     #Starting some security needed services:
     server = smtplib.SMTP(host, port)
