@@ -1,16 +1,18 @@
 #This is a password generator which creates a password and sends it to your personal email so you dont forget it.
 
 
-#Imports
+#Password Generator App
+
 import smtplib
 import getpass
+import time
 from random import sample, shuffle
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import Flask, render_template
 
 letters = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","Y","W","X","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","r","q","s","t","u","v","x","z","y","w"]
-symbols = ["!","#","$","%","&","/","(",")","=","'","?","«","»","<",">",";",",",".",":","|"]
+symbols = ["!","#","$","%","&","/","(",")","=","'","?","«","»","<",">",";",":","|"]
 numbers = [1,2,3,4,5,6,7,8,9,0]
 newPassword = []
 
@@ -38,40 +40,52 @@ print(f"Your new Password: {unzipedPassword}")
 
 sendEmail = input("Send email with these details ? (y/n)").lower()
 
-#Call HTML file
-def getIndexHTML():
-    return render_template("index.html", title="Password Generator", user_service=user_service, user_email=user_email, password=unzipedPassword)
-
 #Send through email the data created:
 def functiontoSendEmail():
-    userSetPassword = input("Root Password: ")
+    userSetPassword = input("\nRoot Password: ")
+    time.sleep(1)
+    emailSendTo = input("Set the email where you want to receive this details: ")
 
     #Starting Email Server:
     host = "smtp.gmail.com"
     port = "587"
     user = "tasantos.esteves@gmail.com"
     password = userSetPassword
-
+    #Starting some security needed services:
     server = smtplib.SMTP(host, port)
     server.ehlo()
     server.starttls()
     server.login(user, password)
 
-    emailSendTo = input("Set the email where you want to receive this details: ")
-
-    #Email Type :
-    body = getIndexHTML()
-
+    #Configure Email content:
     emailMessage = MIMEMultipart()
-    emailMessage['From'] = user
     emailMessage['To'] = emailSendTo
+    emailMessage['From'] = user
     emailMessage['Subject'] = "My Personal Vault: New Service Credentials"
+
+    body = f"""\
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Password Generator</title>
+        </head>
+        <body>
+            <h3 style="color:SlateGray;">New credentials for a new service were created. Please save them.</h3>
+            <p>Service:  {user_service}</p>
+            <p>UserName/Email:  {user_email}</p>
+            <p>Password:  <b>{unzipedPassword}</b> </p>
+            <br><br>
+            <p><b>Please save this email in your personal vault</b></p>
+            <br><br>
+            <p>This email was automatically generated and you should not answer to it. Copyright Tiago Esteves, 2021</p>
+        </body>
+    </html>
+    """
     emailMessage.attach(MIMEText(body, 'html'))
 
     #Send Email:
     server.sendmail(emailMessage['From'], emailMessage['To'], emailMessage.as_string())
     server.quit() #Ends the login session
-
 
 if sendEmail == "y":
     functiontoSendEmail()
