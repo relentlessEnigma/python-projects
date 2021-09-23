@@ -1,24 +1,3 @@
-#UNO Game from beginning
-
-#Make a Deck Creator and compiler - DONE[X] Tested[X] Approved[X]
-#Create a player class - DONE[X] Tested[X] Approved[X]
-#Create a game class - DONE[] Tested[] Approved[]
-#Colocar error handling nos inputs de utilizador - DONE[] Tested[] Approved[]
-
-#1 -create deck - ok
-#2 - create player - ok
-#3 - give cards to players - ok
-#4 - put first card on table - ok
-#5 - starts the game player index0 (later will be player with lowest age)
-#6 - Starts While Loop
-#7 - Shows Table Card
-#8 - Check card on table if it is actionCard and its effect
-#9 - Say who is the player turn
-#10 - Create a Players Turn Management based with the Movimntation (Reverse, skip) and considering the Index Out Of Range error since this is a list.
-#10 - Show player Hand
-#11 - Start Player Move
-    #11.1 - check if move is possible against the table card.
-#12 - in the end of each round, calculate the index with the playingOrder[-1] to calculate the index of the next player
 
 import time  # use only for debugging
 from random import shuffle
@@ -198,6 +177,7 @@ def checkActionCardsStartOfRound(Player):
         Player.setPlayerHand(2)
         return True
 
+
 def checkActionCardsEndOfRound(Player, turn):
     if Deck_TableDeck_Obj[0].isAction == True:
         if Deck_TableDeck_Obj[0].actionType == "Skip":
@@ -206,27 +186,34 @@ def checkActionCardsEndOfRound(Player, turn):
         elif Deck_TableDeck_Obj[0].actionType == "Reverse":
             print("Will Reverse the Playing Order.")
             playingOrder.append[-1]
-        return True
+
 
 def checkCardPlay(Player, move):
     if Player.playerHand[move].color == Deck_TableDeck_Obj[0].color:
         playerHandToTable(move, Player)
+        print(f"{Player.playerName} played the card {Deck_TableDeck_Obj[0]}")
     elif Player.playerHand[move].number == Deck_TableDeck_Obj[0].number:
         playerHandToTable(move, Player)
+        print(f"{Player.playerName} played the card {Deck_TableDeck_Obj[0]}")
     elif Player.playerHand[move].isWild:
         playerHandToTable(move, Player)
+        print(f"{Player.playerName} played the card {Deck_TableDeck_Obj[0]}")
     else:
         print("You don't have cards to play, go draw 1.")
         Player.setPlayerHand(1)
+        print(f"You draw 1 card from the deck. Is the card {Player.playerHand[-1]}.")
         move = Player.playerHand[-1]
         if Player.playerHand[move].color == Deck_TableDeck_Obj[0].color:
             playerHandToTable(move, Player)
+            print(f"{Player.playerName} played the card {Deck_TableDeck_Obj[0]}")
         elif Player.playerHand[move].number == Deck_TableDeck_Obj[0].number:
             playerHandToTable(move, Player)
+            print(f"{Player.playerName} played the card {Deck_TableDeck_Obj[0]}")
         elif Player.playerHand[move].isWild:
             playerHandToTable(move, Player)
+            print(f"{Player.playerName} played the card {Deck_TableDeck_Obj[0]}")
         else:
-            print("Not lucky ... Next Player.")
+            print("The card you picked up is not eligible neither... Moving to Next Player.")
 
 #---------- PlayingOrder & Turns:
 def game(actualPlayer, increment):
@@ -278,11 +265,18 @@ lowestAge()
 #-----------------------------------------------------------------------------------------------------------------------
 actualPlayer = lowestAge().playerID #atualplayer will be an int number only to make the index.
 while(True):
-    Players_List[actualPlayer].showPlayerHand()
-    #Change player (Missing a way of turning back to this loop)
-    print(game(actualPlayer, increment))
-    print(actualPlayer)
-    #tou a receber um return errado da função e não percebo porque
+    if checkActionCardsStartOfRound(actualPlayer) == True:
+        checkActionCardsStartOfRound(actualPlayer)
+        #move to next round
+        game(actualPlayer, increment)
+    else:
+        Players_List[actualPlayer].showPlayerHand()
+        #Change player (Missing a way of turning back to this loop)
+        move = int(input("Select a card to Play: "))
+        #Check if move is valid:
+        checkCardPlay(actualPlayer, move)
+        game(actualPlayer, increment)
+
 
 
 
