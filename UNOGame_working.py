@@ -1,15 +1,27 @@
-#This is a python file
-
 #UNO Game from beginning
-
 
 #Make a Deck Creator and compiler - DONE[X] Tested[X] Approved[X]
 #Create a player class - DONE[X] Tested[X] Approved[X]
 #Create a game class - DONE[] Tested[] Approved[]
 #Colocar error handling nos inputs de utilizador - DONE[] Tested[] Approved[]
 
-from random import shuffle
+#1 -create deck - ok
+#2 - create player - ok
+#3 - give cards to players - ok
+#4 - put first card on table - ok
+#5 - starts the game player index0 (later will be player with lowest age)
+#6 - Starts While Loop
+#7 - Shows Table Card
+#8 - Check card on table if it is actionCard and its effect
+#9 - Say who is the player turn
+#10 - Create a Players Turn Management based with the Movimntation (Reverse, skip) and considering the Index Out Of Range error since this is a list.
+#10 - Show player Hand
+#11 - Start Player Move
+    #11.1 - check if move is possible against the table card.
+#12 - in the end of each round, calculate the index with the playingOrder[-1] to calculate the index of the next player
+
 import time  # use only for debugging
+from random import shuffle
 
 # ----------- Global Lists: - Approved []
 Deck_Specials = ["Draw Two", "Reverse", "Skip", "Wild", "Wild Draw Four"]  # Implement maybe later...
@@ -20,7 +32,8 @@ Deck_CurrentGame = []
 Deck_CurrentGame_Obj = []
 Deck_TableDeck_Obj = []
 Players_List = []
-playingOrder = [1]
+increment = [0]
+playingOrder = 1
 
 # ----------- Create Deck: - Approved []
 def createDeck():
@@ -46,7 +59,7 @@ def createDeck():
         shuffle(Deck_CurrentGame)  # Shuffle the deck
     compileDeck()
 
-class Card():
+class Card:
     def __init__(self, name, color, number, isAction, actionType, isWild, wildType):
         # Card attributes
         self.name = name
@@ -112,9 +125,9 @@ def cardAttrs(card, call_isCardWild=0, call_cardWildType=0, call_isCardAction=0,
         return getCardNumber(card)
 
 #Convert cards to object and append to new List
-def convertCardToObject():
-    for card in Deck_CurrentGame: #Append each card as an object to a new deck
-        Deck_CurrentGame_Obj.append(Card(card,
+def convertCardToObject(originalDeck, objectDeck):
+    for card in originalDeck: #Append each card as an object to a new deck
+        objectDeck.append(Card(card,
                                      cardAttrs(card, 0, 0, 0, 0, 1, 0),
                                      cardAttrs(card, 0, 0, 0, 0, 0, 1),
                                      cardAttrs(card, 0, 0, 1, 0, 0, 0),
@@ -178,13 +191,13 @@ def deckToTable():
 def seeCardOnTable():
     print(f"\nCard on table is:\n{Deck_TableDeck_Obj[0].name}\n")
 
-
 #---------- Checks cards eligible play:
 def checkActionCardsStartOfRound(Player):
     if Deck_TableDeck_Obj[0].name == "Draw Two":
         print(Player.playerName, " pick up 2 cards from the main deck! :p")
         Player.setPlayerHand(2)
         return True
+
 def checkActionCardsEndOfRound(Player, turn):
     if Deck_TableDeck_Obj[0].isAction == True:
         if Deck_TableDeck_Obj[0].actionType == "Skip":
@@ -215,39 +228,61 @@ def checkCardPlay(Player, move):
         else:
             print("Not lucky ... Next Player.")
 
-#1 -create deck - ok
-#2 - create player - ok
-#3 - give cards to players - ok
-#4 - put first card on table - ok
-#5 - starts the game player index0 (later will be player with lowest age)
-#6 - Starts While Loop
-#7 - Shows Table Card
-#8 - Check card on table if it is actionCard and its effect
-#9 - Say who is the player turn
-#10 - Show player Hand
-#11 - Start Player Move
-    #11.1 - check if move is possible against the table card.
-#12 - in the end of each round, calculate the index with the playingOrder[-1] to calculate the index of the next player
+#---------- PlayingOrder & Turns:
+def game(actualPlayer, increment):
+    if playingOrder == 1:
+        try:
+            increment.append(1)
+            actualPlayer += increment[-1]
+            return actualPlayer
+        except IndexError:
+            indexError(increment, actualPlayer)
+    elif playingOrder == -1:
+        try:
+            increment.append(-1)
+            actualPlayer += increment[-1]
+            return actualPlayer
+        except IndexError:
+            indexError(increment, actualPlayer)
 
-createDeck() #1
-convertCardToObject()
-createPlayer(Deck_CurrentGame_Obj, Players_List) #2
-for player in Players_List: player.setPlayerHand(7) #3
-deckToTable() #4
+def indexError(increment,actualPlayer):
+    lenOfList = len(Players_List)
+    #check if it is in reverse mode:
+    if increment[-1] == -1:
+        print(lenOfList*-1)
+        if actualPlayer == (lenOfList*-1)-1:
+            actualPlayer = lenOfList-1
+            increment.append(0)
+            game(actualPlayer, increment)
+    elif increment[-1] == 1:
+        if actualPlayer == lenOfList:
+            actualPlayer = 0
+            increment.append(0)
+            game(actualPlayer, increment)
 
-startingPlayer = lowestAge()
-playerTurn = Players_List[startingPlayer.playerID]
-seeCardOnTable() #7
-print(f"Player Turn: {playerTurn.playerName}")
-playerTurn.showPlayerHand()
+#-----------------------------------------------------------------------------------------------------------------------
+#First - Deck Build:
+createDeck()
+convertCardToObject(Deck_CurrentGame, Deck_CurrentGame_Obj)
+#Second - Create Players:
+createPlayer(Deck_CurrentGame_Obj, Players_List)
+#Third - Give Cards to Players:
+for player in Players_List: player.setPlayerHand(7)
+#Fourth - Put card on table:
+deckToTable()
+#Fifth - See card on table:
+seeCardOnTable()
+#Seventh - Select first player to play by Age
+lowestAge()
 
-playerMove = int(input("Select the card to play: "))
-checkCardPlay(playerTurn, playerMove)
+#-----------------------------------------------------------------------------------------------------------------------
+actualPlayer = lowestAge().playerID #atualplayer will be an int number only to make the index.
+while(True):
+    Players_List[actualPlayer].showPlayerHand()
+    #Change player (Missing a way of turning back to this loop)
+    print(game(actualPlayer, increment))
+    print(actualPlayer)
+    #tou a receber um return errado da função e não percebo porque
 
-nextPlayer = playerTurn.playerID + playingOrder[-1]
-Player = Players_List[nextPlayer]
-while (True):
-    print(f"Player Turn: {Player.playerName}")
-    nextPlayer.showPlayerHand()
-    playerMove = int(input("Select the card to play: "))
-    checkCardPlay(nextPlayer, playerMove)
+
+
