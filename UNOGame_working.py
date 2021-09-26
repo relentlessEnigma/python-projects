@@ -22,6 +22,7 @@
 
 import time  # use only for debugging
 from random import shuffle
+from operator import attrgetter
 
 # ----------- Global Lists: - Approved []
 Deck_Specials = ["Draw Two", "Reverse", "Skip", "Wild", "Wild Draw Four"]  # Implement maybe later...
@@ -71,7 +72,6 @@ class Card:
         self.isWild = isWild
         self.wildType = wildType
 
-
 #Define card attributes:
 def cardAttrs(card, call_isCardWild=0, call_cardWildType=0, call_isCardAction=0, call_cardActionType=0, call_getCardColor=0, call_getCardNumber=0):
     def isCardWild(card):
@@ -87,7 +87,6 @@ def cardAttrs(card, call_isCardWild=0, call_cardWildType=0, call_isCardAction=0,
             elif card == "|Wild Draw Four|":
                 type = "Wild Draw Four"
                 return type
-
     def isCardAction(card):
         if card in ActionCard:
             return True
@@ -97,7 +96,6 @@ def cardAttrs(card, call_isCardWild=0, call_cardWildType=0, call_isCardAction=0,
         if isCardAction(card) == True:
             type = "".join(char for char in card[5:-1:1])
             return type
-
     def getCardColor(card):
         if isCardWild(card) == True:
             color = None
@@ -177,14 +175,10 @@ def createPlayer(mainDeck, playerlist):
         playerID += 1
 
 def lowestAge():
-    y = 100
-    z = 0
-    for player in range(len(Players_List)):
-        if Players_List[player].playerAge < y:
-            y = Players_List[player].playerAge
-            z = Players_List[player]
-    print(f"{z.playerName}, starts the game because has the lowest age.")
-    return z
+    #make a lambda with attrgetter to sort the list by the lowest age attribute from objects.
+    Players_List.sort(key=lambda x: x.playerAge, reverse=False)
+    # ListName.sort(key=lambda x: x.attribute, reverse=False)
+    #                                        if reverse == False: Age oldest to newest
 
 # --------- Moves
 def playerHandToTable(move, Player):
@@ -204,8 +198,10 @@ def checkActionCardsStartOfRound(Player):
     if Deck_TableDeck_Obj[0].name == "Draw Two":
         print(Player.playerName, " pick up 2 cards from the main deck! :p")
         Player.setPlayerHand(2)
+    elif Deck_TableDeck_Obj[0].name == "Wild Draw Four":
+        print(Player.playerName, " pick up 4 cards from the main deck! :p")
+        Player.setPlayerHand(4)
         return True
-
 
 def checkActionCardsEndOfRound(Player, turn):
     if Deck_TableDeck_Obj[0].isAction == True:
@@ -215,7 +211,6 @@ def checkActionCardsEndOfRound(Player, turn):
         elif Deck_TableDeck_Obj[0].actionType == "Reverse":
             print("Will Reverse the Playing Order.")
             playingOrder.append[-1]
-
 
 def checkCardPlay(Player, move):
     if Player.playerHand[move].color == Deck_TableDeck_Obj[0].color:
@@ -250,23 +245,24 @@ def checkCardPlay(Player, move):
             print("The card you picked up is not eligible neither... Moving to Next Player.")
 
 #---------- PlayingOrder & Turns:
-def game(actualPlayer, increment):
+def nextPlayer(actualPlayer, increment):
     if playingOrder == 1:
         try:
             increment.append(1)
-            actualPlayer = Players_List[actualPlayer.playerID + increment[-1]]
+            actualPlayer = Players_List[actualPlayer].playerID + increment[-1]
             return actualPlayer
         except IndexError:
-            indexError(increment, actualPlayer)
+            print("Entered in exception")
+            indexError(actualPlayer, increment)
     elif playingOrder == -1:
         try:
             increment.append(-1)
             actualPlayer += increment[-1]
             return actualPlayer
         except IndexError:
-            indexError(increment, actualPlayer)
+            indexError(actualPlayer, increment)
 
-def indexError(increment,actualPlayer):
+def indexError(actualPlayer, increment):
     lenOfList = len(Players_List)
     #check if it is in reverse mode:
     if increment[-1] == -1:
@@ -274,12 +270,12 @@ def indexError(increment,actualPlayer):
         if actualPlayer == (lenOfList*-1)-1:
             actualPlayer = lenOfList-1
             increment.append(0)
-            game(actualPlayer, increment)
+            nextPlayer(actualPlayer, increment)
     elif increment[-1] == 1:
-        if actualPlayer == lenOfList:
+        if actualPlayer == lenOfList-1:
             actualPlayer = 0
             increment.append(0)
-            game(actualPlayer, increment)
+            nextPlayer(actualPlayer, increment)
 
 #-----------------------------------------------------------------------------------------------------------------------
 #First - Deck Build:
@@ -294,12 +290,19 @@ deckToTable()
 #Fifth - See card on table:
 seeCardOnTable()
 #Seventh - Select first player to play by Age
-lowestAge()
+lowestAge() # = index[0]
+#--------------------------------------------------------------------------------------------------------------------
+actualPlayer = 0
+while(actualPlayer < 5):
+    print(f"Player's Turn: {Players_List[actualPlayer].playerName}")
+    move = input("Make your move: ")
 
-#-----------------------------------------------------------------------------------------------------------------------
-actualPlayer = lowestAge()#atualplayer will be an int number only to make the index.
-while(True):
-    if checkActionCardsStartOfRound(actualPlayer) == True:
+    actualPlayer = nextPlayer(actualPlayer, increment)
+    print(Players_List[actualPlayer].playerName)
+
+
+
+"""if checkActionCardsStartOfRound(actualPlayer) == True:
         checkActionCardsStartOfRound(actualPlayer)
         #move to next round
         game(actualPlayer, increment)
@@ -309,6 +312,4 @@ while(True):
         move = int(input("Select a card to Play: "))
         #Check if move is valid:
         checkCardPlay(actualPlayer, move)
-        game(actualPlayer, increment)
-
-
+        game(actualPlayer, increment)"""
