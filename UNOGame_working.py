@@ -1,4 +1,3 @@
-
 import time  # use only for debugging
 from random import shuffle
 from operator import attrgetter
@@ -166,9 +165,9 @@ def lowestAge():
     for players in Players_List:
         players.playerID = x
         x += 1
-    print("------ Player Starting the Round by Lowest age ------------------------")
-    print(f"------------------- {Players_List[0].playerName} -----------------------------")
-    print(" ----------------------------------------------------------------------")
+    print("------ Player Starting the Round by Lowest Age ------")
+    print(f"------ {Players_List[0].playerName} ------")
+    print("-----------------------------------------------------")
 
 #Moves
 def playerHandToTable(move, playerIndex):
@@ -220,7 +219,7 @@ def checkActionCardsStartOfRound(playerIndex):
         else:
             print(f"OOPS!! Card on table is {Deck_TableDeck_Obj[0].name}, pick up {penaltySumDraw2} cards from the main deck!")
             actualPlayer.setPlayerHand(penaltySumDraw2)
-            Deck_TableDeck_Obj[0].actionType == "None" #This way, the next player wont end up in this function again...
+            Deck_TableDeck_Obj[0].actionType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw2 = 2
             return True #if return true, will move to next player in while loop. cant do it here.
     elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four":
@@ -235,7 +234,7 @@ def checkActionCardsStartOfRound(playerIndex):
         else:
             print(f"Someone is unlucky! {actualPlayer.playerName} pick up {penaltySumDraw4} cards from the main deck!")
             actualPlayer.setPlayerHand(penaltySumDraw4)
-            Deck_TableDeck_Obj[0].wildType == "None" #This way, the next player wont end up in this function again...
+            Deck_TableDeck_Obj[0].wildType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw4 = 4
             return True #if return true, will move to next player in while loop. cant do it here.
 
