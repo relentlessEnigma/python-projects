@@ -1,3 +1,4 @@
+
 import time  # use only for debugging
 from random import shuffle
 from operator import attrgetter
@@ -217,7 +218,8 @@ def checkActionCardsStartOfRound(playerIndex):
             print("You have one 'Draw Two' card that you can play.")
             penaltySumDraw2 +=2
         else:
-            print(f"OOPS!! Card on table is {Deck_TableDeck_Obj[0].name}, pick up {penaltySumDraw2} cards from the main deck!")
+            print(f"OOPS!! Card on table is {Deck_TableDeck_Obj[0].name}, pick up {penaltySumDraw2} cards from the main deck!\n")
+            time.sleep(2)
             actualPlayer.setPlayerHand(penaltySumDraw2)
             Deck_TableDeck_Obj[0].actionType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw2 = 2
@@ -233,6 +235,7 @@ def checkActionCardsStartOfRound(playerIndex):
             time.sleep(2)
         else:
             print(f"Someone is unlucky! {actualPlayer.playerName} pick up {penaltySumDraw4} cards from the main deck!")
+            time.sleep(2)
             actualPlayer.setPlayerHand(penaltySumDraw4)
             Deck_TableDeck_Obj[0].wildType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw4 = 4
