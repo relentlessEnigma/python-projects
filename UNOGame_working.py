@@ -1,4 +1,3 @@
-
 import time  # use only for debugging
 from random import shuffle
 from operator import attrgetter
@@ -21,6 +20,7 @@ increment = [0]
 playingOrder = 1
 skipOrder = False
 wildColor = "Undefined"
+actualPlayer = 0
 penaltySumDraw2 = 2
 penaltySumDraw4 = 4
 
@@ -28,7 +28,7 @@ penaltySumDraw4 = 4
 def createDeck():
     def createNumbersOnDeck(RangeMin, RangeMax, Ammount):  # Create Deck with numbers
         for i in range(RangeMin, RangeMax):
-            for j in range(Ammount):
+            for _ in range(Ammount):
                 for k in range(4):
                     Deck_CurrentGame.append(Deck_Colors[k] + "  " + str(i) + "|")
     def createActionCardsOnDeck(ACName, Ammount):  # Create Deck with Action Cards
@@ -39,12 +39,13 @@ def createDeck():
         for i in range(Ammount):
             Deck_CurrentGame.append("|" + WCName + "|")
     def compileDeck():  # Compiles all the previous functions and builds and shuffles a deck
-        createNumbersOnDeck(0, 10, 2)  # Create Card "0" to "9" for each color
+        createNumbersOnDeck(1, 10, 2)  # Create Card "1" to "9" for each color
+        createActionCardsOnDeck("0", 1)  # Create Card "0" for each color (x1 time)
         createActionCardsOnDeck("Draw Two", 2)  # Create Action Cards
         createActionCardsOnDeck("Reverse", 2)  # Create Action Cards
         createActionCardsOnDeck("Skip", 2)  # Create Action Cards
-        createWildCardsOnDeck("Wild", 5)  # Create Wild Cards
-        createWildCardsOnDeck("Wild Draw Four", 5)  # Create Wild Cards
+        createWildCardsOnDeck("Wild", 4)  # Create Wild Cards
+        createWildCardsOnDeck("Wild Draw Four", 4)  # Create Wild Cards
         shuffle(Deck_CurrentGame)  # Shuffle the deck
     compileDeck()
 
@@ -57,11 +58,11 @@ class Card:
         self.isAction = isAction
         self.actionType = actionType
         self.isWild = isWild
-        self.wildType = wildType
+        self.wildType = wildType#Class for all the cards in game.
 
 #Define card attributes:
 def cardAttrs(card, call_isCardWild=0, call_cardWildType=0, call_isCardAction=0, call_cardActionType=0, call_getCardColor=0, call_getCardNumber=0):
-    def isCardWild(card):
+    def isCardWild(card): #bool
         if card in WildCards:
             return True
         else:
@@ -76,7 +77,7 @@ def cardAttrs(card, call_isCardWild=0, call_cardWildType=0, call_isCardAction=0,
                 return type
         else:
             return False
-    def isCardAction(card):
+    def isCardAction(card): #bool
         if card in ActionCard:
             return True
         else:
@@ -171,56 +172,107 @@ def lowestAge():
     print("-----------------------------------------------------")
 
 #Moves
-def playerHandToTable(move, playerIndex):
-    actualPlayer = Players_List[playerIndex]
+def playerHandToTable(move):
+    global actualPlayer
+    indexPlayer = Players_List[actualPlayer]
 
-    Deck_TableDeck_Obj.insert(0, actualPlayer.playerHand[move])
-    actualPlayer.playerHand.pop(move)
-    print(f"{actualPlayer.playerName} played the card: {Deck_TableDeck_Obj[0].name}")
+    Deck_TableDeck_Obj.insert(0, indexPlayer.playerHand[move])
+    indexPlayer.playerHand.pop(move)
+    print(f"{indexPlayer.playerName} played the card: {Deck_TableDeck_Obj[0].name}")
 
 def deckToTable():
-    Deck_TableDeck_Obj.insert(0, Deck_CurrentGame_Obj[-1])
-    Deck_CurrentGame_Obj.pop(-1)
+    Deck_TableDeck_Obj.insert(0, Deck_CurrentGame_Obj.pop(-1))
 
 def seeCardOnTable():
     print("------------------------------------------------------")
     if Deck_TableDeck_Obj[0].name == "|Wild|":
-        print(f"Card on the table is:\n{Deck_TableDeck_Obj[0].name} and the color choosed by last player is {Deck_TableDeck_Obj[0].color}\n")
+        print(f"Card on the table is:\n{Deck_TableDeck_Obj[0].name} and the color chosen by last player is {Deck_TableDeck_Obj[0].color}\n")
     elif Deck_TableDeck_Obj[0].name == "|Wild Draw Four|":
-        print(f"Card on the table is:\n{Deck_TableDeck_Obj[0].name} and the color choosed by last player is {Deck_TableDeck_Obj[0].color}\n")
+        print(f"Card on the table is:\n{Deck_TableDeck_Obj[0].name} and the color chosen by last player is {Deck_TableDeck_Obj[0].color}\n")
     else:
         print(f"Card on the table is:\n{Deck_TableDeck_Obj[0].name}\n")
 
-def chooseNewColor(playerIndex):
+def chooseNewColor():
     global wildColor
-    count = 0
-    actualPlayer = Players_List[playerIndex]
+    global actualPlayer
 
-    print(f"\n{actualPlayer.playerName} choose the color to next card: ")
+    count = 0
+    indexPlayer = Players_List[actualPlayer]
+
+    print(f"\n{indexPlayer.playerName} choose the color to next card: ")
     for color in Deck_Colors:
         print(count, " - ", color)
         count += 1
     userChoise = int(input("Color: "))
     wildColor = "".join(char for char in Deck_Colors[userChoise][1:4]) #slice the color in list to get without the "|"
     Deck_TableDeck_Obj[0].color = wildColor
-    print(f"Color choosed by {actualPlayer.playerName} for next round is {wildColor}")
+    print(f"Color choosed by {indexPlayer.playerName} for next round is {wildColor}")
     return wildColor
 
+def setPlayingOrder():
+    global playingOrder
+
+    if playingOrder == 1:
+        playingOrder = -1
+        print("Playing Order set to: Counterclockwise")
+    elif playingOrder == -1:
+        playingOrder = 1
+        print("Playing Order set to: Clockwise")
+
 #Checks cards eligible play:
-def checkActionCardsStartOfRound(playerIndex):
-    actualPlayer = Players_List[playerIndex]
+def checkFirstCardOnPile():
+    global skipOrder
+    global playingOrder
+
+    if Deck_TableDeck_Obj[0].isAction == True:
+        if Deck_TableDeck_Obj[0].actionType == "Skip":
+            #Player to dealer's left misses a turn (The present player will miss the round and starts the second player.)
+            print("Bad Luck! Will skip to the next Player!")
+            time.sleep(1)
+            return True
+        elif Deck_TableDeck_Obj[0].actionType == "Reverse":
+            setPlayingOrder()
+            return True
+        elif Deck_TableDeck_Obj[0].actionType == "Draw Two":
+            return checkActionCardsStartOfRound()
+
+    elif Deck_TableDeck_Obj[0].isWild == True:
+        if Deck_TableDeck_Obj[0].wildType == "Wild":
+            #Choose a color and plays after it with the new color choosed.
+            chooseNewColor()
+
+        elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four":
+            #puts the card back to pile and shuffles it again.
+            print("The First card is  not allowed as a first card."
+                  "Deck will be shuffled again and a new card  will be present."
+                  "Shuffling...")
+            time.sleep(1)
+            print("...")
+            time.sleep(2)
+            Deck_CurrentGame_Obj.append(Deck_TableDeck_Obj.pop(0))
+            shuffle(Deck_CurrentGame_Obj)
+            deckToTable()
+
+
+def checkActionCardsStartOfRound():
+    global actualPlayer
     global penaltySumDraw2
     global penaltySumDraw4
 
+    indexPlayer = Players_List[actualPlayer]
+
     if Deck_TableDeck_Obj[0].actionType == "Draw Two":
         #check if player has the Draw Two card present in hand and plays it.
-        if Deck_TableDeck_Obj[0] in actualPlayer.playerHand:
-            print("You have one 'Draw Two' card that you can play.")
-            penaltySumDraw2 +=2
+        print(actualPlayer)
+        if any(Deck_TableDeck_Obj[0].actionType == card.actionType for card in Players_List[actualPlayer].playerHand):
+            #cardIndex = Players_List[actualPlayer].playerHand.index(card)
+            print("You have one 'Draw Two' card that you can play. You should play it.")
+            penaltySumDraw2 += 2
+            return False
         else:
             print(f"OOPS!! Card on table is {Deck_TableDeck_Obj[0].name}, pick up {penaltySumDraw2} cards from the main deck!\n")
             time.sleep(2)
-            actualPlayer.setPlayerHand(penaltySumDraw2)
+            indexPlayer.setPlayerHand(penaltySumDraw2)
             Deck_TableDeck_Obj[0].actionType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw2 = 2
             return True #if return true, will move to next player in while loop. cant do it here.
@@ -228,20 +280,21 @@ def checkActionCardsStartOfRound(playerIndex):
         if Deck_TableDeck_Obj[0] in actualPlayer.playerHand:
             print("You have one 'Wild Draw Four' that you can play.")
             penaltySumDraw4 +=  4
-            for card in actualPlayer.playerHand:
+            for card in indexPlayer.playerHand:
                 if card.wildType == "Wild Draw Four":
-                    index = actualPlayer.playerHand.index(card)
-            playerHandToTable(index, playerIndex)
+                    index = indexPlayer.playerHand.index(card)
+            playerHandToTable(index)
             time.sleep(2)
         else:
-            print(f"Someone is unlucky! {actualPlayer.playerName} pick up {penaltySumDraw4} cards from the main deck!")
+            print(f"Someone is unlucky! {indexPlayer.playerName} pick up {penaltySumDraw4} cards from the main deck!")
             time.sleep(2)
-            actualPlayer.setPlayerHand(penaltySumDraw4)
+            indexPlayer.setPlayerHand(penaltySumDraw4)
             Deck_TableDeck_Obj[0].wildType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw4 = 4
             return True #if return true, will move to next player in while loop. cant do it here.
 
-def checkActionCardsEndOfRound(playerIndex):
+def checkActionCardsEndOfRound():
+    global actualPlayer
     global playingOrder
     global skipOrder
 
@@ -250,68 +303,66 @@ def checkActionCardsEndOfRound(playerIndex):
             print("Will skip to the next Player!")
             skipOrder = True
         elif Deck_TableDeck_Obj[0].actionType == "Reverse":
-            if playingOrder == 1:
-                print("Will Reverse the Playing Order.")
-                playingOrder = -1
-            elif playingOrder == -1:
-                print("Will Reverse the Playing Order.")
-                playingOrder = 1
+            setPlayingOrder()
     elif Deck_TableDeck_Obj[0].isWild == True:
         if Deck_TableDeck_Obj[0].wildType == "Wild":
-            chooseNewColor(playerIndex)
+            chooseNewColor()
         elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four":
-            chooseNewColor(playerIndex)
+            chooseNewColor()
 
-def checkCardPlay(playerIndex, move):
-    actualPlayer = Players_List[playerIndex]
+def checkCardPlay(move):
+    global actualPlayer
+    indexPlayer = Players_List[actualPlayer]
 
-    if actualPlayer.playerHand[move].color == Deck_TableDeck_Obj[0].color:
+    if indexPlayer.playerHand[move].color == Deck_TableDeck_Obj[0].color:
         print("DEBUG: Compatibility Check: COLOR")
-        playerHandToTable(move, playerIndex)
+        playerHandToTable(move)
         time.sleep(2)
-    elif actualPlayer.playerHand[move].number == Deck_TableDeck_Obj[0].number:
+    elif indexPlayer.playerHand[move].number == Deck_TableDeck_Obj[0].number:
         print("DEBUG: Compatibility Check: NUMBER")
-        playerHandToTable(move, playerIndex)
+        playerHandToTable(move)
         time.sleep(2)
-    elif actualPlayer.playerHand[move].isWild:
+    elif indexPlayer.playerHand[move].isWild:
         print("DEBUG: Compatibility Check: IsWILD")
-        playerHandToTable(move, playerIndex)
+        playerHandToTable(move)
         time.sleep(2)
     else:
         print("You failed the move, go draw 1 card.")
         time.sleep(2)
-        actualPlayer.setPlayerHand(1)
-        print(f"You draw 1 card from the deck. Is the card {actualPlayer.playerHand[-1].name}.")
+        indexPlayer.setPlayerHand(1)
+        print(f"You draw 1 card from the deck. Is the card {indexPlayer.playerHand[-1].name}.")
         time.sleep(2)
-        if actualPlayer.playerHand[-1].color == Deck_TableDeck_Obj[0].color:
+        if indexPlayer.playerHand[-1].color == Deck_TableDeck_Obj[0].color:
             userChoise = input("You got a compatible card! Want to use it now? (y/n)")
             if userChoise == "y":
-                playerHandToTable(-1, playerIndex)
+                playerHandToTable(-1)
             else:
                 print("Moving to next Player")
-                nextPlayer(playerIndex)
-        elif actualPlayer.playerHand[-1].number == Deck_TableDeck_Obj[0].number:
+                nextPlayer()
+        elif indexPlayer.playerHand[-1].number == Deck_TableDeck_Obj[0].number:
             userChoise = input("You got a compatible card! Want to use it now? (y/n)")
             if userChoise == "y":
-                playerHandToTable(-1, playerIndex)
+                playerHandToTable(-1)
             else:
                 print("Moving to next Player")
-                nextPlayer(playerIndex)
-        elif actualPlayer.playerHand[-1].isWild == True:
+                nextPlayer()
+        elif indexPlayer.playerHand[-1].isWild == True:
             userChoise = input("You got a compatible card! Want to use it now? (y/n)")
             if userChoise == "y":
-                playerHandToTable(-1, playerIndex)
+                playerHandToTable(-1)
             else:
                 print("Moving to next Player")
-                nextPlayer(playerIndex)
+                nextPlayer()
         else:
             print("The card you picked up is not eligible neither... Moving to Next Player.")
-            nextPlayer(playerIndex)
+            nextPlayer()
 
 #Player Turns:
-def nextPlayer(actualPlayer):
-    lenOfList = len(Players_List)
+def nextPlayer():
     global skipOrder
+    global actualPlayer
+
+    lenOfList = len(Players_List)
     # non reverse
     if playingOrder == 1:
         if skipOrder == True:
@@ -371,7 +422,6 @@ def nextPlayer(actualPlayer):
                 increment.append(-1)
                 actualPlayer = Players_List[actualPlayer].playerID + increment[-1]
                 return actualPlayer
-    #actualPlayer não está a ser devolvido. Verificar Porque
 
 def setUpGame(): #Setup the Decks, players, etc
     #First - Deck Build:
@@ -381,41 +431,53 @@ def setUpGame(): #Setup the Decks, players, etc
     createPlayer(Deck_CurrentGame_Obj, Players_List)
     #Third - Give Cards to Players:
     for player in Players_List: player.setPlayerHand(7)
+    for player in Players_List: player.playerHand.append(Card("|Red Draw Two|", "Red",None,True,"Draw Two",False,None))
     #Fourth - Put card on table:
-    deckToTable()
+    #deckToTable()
+    #name, color, number, isAction, actionType, isWild, wildType
+    Deck_TableDeck_Obj.append(Card("|Red Draw Two|", "Red",None,True,"Draw Two",False,None))
     #Seventh - Select first player to play by Age
     lowestAge() # = index[0]
-    #Fifth - See card on table:
-    seeCardOnTable() #Setup
 
 def firstMove():
+    global actualPlayer
+    seeCardOnTable()
+    if checkFirstCardOnPile() == True:
+        nextPlayer()
+
+def secondmove():
     global actualPlayer
 
     Players_List[actualPlayer].showPlayerHand()
     move = int(input("Make your move: "))
-    if checkActionCardsStartOfRound(actualPlayer) == True:
-        nextPlayer(actualPlayer)
-    checkCardPlay(actualPlayer, move)
-    checkActionCardsEndOfRound(actualPlayer)
-    actualPlayer = nextPlayer(actualPlayer)
+    checkCardPlay(move)
+    checkActionCardsEndOfRound()
+    actualPlayer = nextPlayer()
     seeCardOnTable()
 #--------------------------------------------------------------------------------------------------------------------
-actualPlayer = 0
+
 setUpGame()
-firstMove()
 
-while(True):
-    print(f"Player's Turn: {Players_List[actualPlayer].playerName}")
-
-    if checkActionCardsStartOfRound(actualPlayer) == True:
-        actualPlayer = nextPlayer(actualPlayer)
-        continue
-
+seeCardOnTable()
+print(f"Player's Turn: {Players_List[actualPlayer].playerName}")
+if checkFirstCardOnPile() == False:
     Players_List[actualPlayer].showPlayerHand()
     move = int(input("Select a card to Play: "))
-    checkCardPlay(actualPlayer, move)
-    checkActionCardsEndOfRound(actualPlayer)
-
-    actualPlayer = nextPlayer(actualPlayer)
+    checkCardPlay(move)
+    checkActionCardsEndOfRound()
     seeCardOnTable()
-    print("SkipOrder = ", skipOrder)
+
+nextPlayer()
+while(True):
+    print(f"Player's Turn: {Players_List[actualPlayer].playerName}")
+    checkActionCardsStartOfRound()
+    Players_List[actualPlayer].showPlayerHand()
+    move = int(input("Select a card to Play: "))
+    checkCardPlay(move)
+    checkActionCardsEndOfRound()
+    seeCardOnTable()
+    nextPlayer()
+    print(f"Main Deck contains {len(Deck_CurrentGame_Obj)} cards left.")
+
+
+#TODO Bug Fixes (Check Excel file)
