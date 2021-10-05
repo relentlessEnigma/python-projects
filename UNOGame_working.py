@@ -12,6 +12,8 @@ Deck_CurrentGame = []
 Deck_CurrentGame_Obj = []
 Deck_TableDeck_Obj = []
 
+#Teste for GIT
+
 #List Of Players and increments
 Players_List = []
 increment = [0]
@@ -478,6 +480,3 @@ while(True):
     seeCardOnTable()
     nextPlayer()
     print(f"Main Deck contains {len(Deck_CurrentGame_Obj)} cards left.")
-
-
-#TODO Bug Fixes (Check Excel file)
