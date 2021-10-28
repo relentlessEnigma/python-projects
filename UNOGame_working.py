@@ -2,9 +2,7 @@ import time  # use only for debugging
 from random import shuffle
 from random import random
 
-from operator import attrgetter
-
-#Global Lists: - Approved []
+#Global Lists:
 Deck_Colors = ["|Red", "|Blu", "|Yel", "|Gre"]
 ActionCard = ["|Gre Skip|", "|Blu Skip|", "|Red Skip|", "|Yel Skip|", "|Gre Reverse|", "|Blu Reverse|", "|Red Reverse|", "|Yel Reverse|", "|Gre Draw Two|", "|Blu Draw Two|", "|Red Draw Two|", "|Yel Draw Two|"]
 WildCards = ["|Wild Draw Four|", "|Wild|"]
@@ -26,8 +24,9 @@ actualPlayer = 0
 penaltySumDraw2 = 2
 penaltySumDraw4 = 4
 PointsSum = 0
+move = ""
 
-#Create Deck:
+#Create Deck and Card Objects:
 def createDeck():
     def createNumbersOnDeck(RangeMin, RangeMax, Ammount):  # Create Deck with numbers
         for i in range(RangeMin, RangeMax):
@@ -54,12 +53,13 @@ def createDeck():
 
 def refillDeck():
     i = 0
-    for card in Deck_TableDeck_Obj:
-        if i > 0:
-            Deck_CurrentGame_Obj.append(Deck_TableDeck_Obj.pop(card))
-            shuffle(Deck_CurrentGame_Obj)  # Shuffle the deck
-        i += 1
-    print("Main Deck was refilled and shuffled.")
+    if len(Deck_CurrentGame_Obj) < 5:
+        for card in Deck_TableDeck_Obj:
+            if i > 0:
+                Deck_CurrentGame_Obj.append(Deck_TableDeck_Obj.pop(card))
+                shuffle(Deck_CurrentGame_Obj)  # Shuffle the deck
+            i += 1
+        print("Main Deck was refilled and shuffled.")
 
 class Card:
     def __init__(self, name, color, number, isAction, actionType, isWild, wildType):
@@ -140,7 +140,7 @@ def convertCardToObject(originalDeck, objectDeck):
                                     cardAttrs(card, 0, 1, 0, 0, 0, 0)))
         idCount += 1
 
-#Class Player (Create Player):
+#Create Players and Player Objects:
 class Player(Card):  # Define Players and Player Hand
     def __init__(self, playerID, playerName, playerAge, playerScore, mainDeck):
         self.playerID = playerID
@@ -149,7 +149,10 @@ class Player(Card):  # Define Players and Player Hand
         self.playerScore = playerScore
         self.mainDeck = mainDeck
         self.playerHand = []
+        self.personalBet = bool
 
+    def setPersonalBet(self, bet):
+        self.personalBet = bet
     def setPlayerHand(self, Ammount):
         for i in range(Ammount):
             self.playerHand.append(self.mainDeck.pop(0))
@@ -180,9 +183,9 @@ def lowestAge():
     for player in Players_List:
         player.playerID = x
         x += 1
-    print(f"\nPlayer Starting the Round by Lowest Age is: {Players_List[0].playerName}\n")
+    print(f"Player Starting the Game by Lowest Age is: {Players_List[0].playerName}\n")
 
-#Moves
+#Make Moves & Define Playing Orders:
 def playerHandToTable(move):
     global actualPlayer
     indexPlayer = Players_List[actualPlayer]
@@ -222,25 +225,27 @@ def chooseNewColor():
 
 def setPlayingOrder():
     global playingOrder
+    global followingPlayer
+    global previousPlayer
 
     if playingOrder == 1:
         playingOrder = -1
+        followingPlayer = -1
+        previousPlayer = 1
         print("Playing Order set to: Counterclockwise")
     elif playingOrder == -1:
         playingOrder = 1
+        followingPlayer = 1
+        previousPlayer = -1
         print("Playing Order set to: Clockwise")
 
-#Checks card moves:
+#Checks Allowed Card Moves (Start - Mid - End of each round):
 def checkFirstCardOnPile():
     global skipOrder
     global playingOrder
-
     while(Deck_TableDeck_Obj[0].isAction or Deck_TableDeck_Obj[0].isWild == True):
         if Deck_TableDeck_Obj[0].actionType == "Skip":
-            #Player to dealer's left misses a turn (The present player will miss the round and starts the second player.)
             print("Bad Luck! Will skip to the next Player!")
-            time.sleep(1)
-            Deck_TableDeck_Obj.append(Deck_CurrentGame_Obj[0])
             return True
         elif Deck_TableDeck_Obj[0].actionType == "Reverse":
             setPlayingOrder()
@@ -251,21 +256,23 @@ def checkFirstCardOnPile():
         elif Deck_TableDeck_Obj[0].wildType == "Wild":
             #Choose a color and plays after it with the new color choosed.
             chooseNewColor()
-            return True
+            return False #If return True, will move to next player....
         elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four":
             if len(Deck_TableDeck_Obj) == 1:
                 #puts the card back to pile and shuffles it again.
-                print("The First card is  not allowed as a first card. "
-                      "Deck will be shuffled again and a new card  will be present.\n"
-                      "Shuffling...")
-                time.sleep(1)
-                print("...")
+                print("Card in Table is 'Wild Draw Four'.\n"
+                      "This card is not allowed as a first card.\n"
+                      "Deck will be shuffled again and a new card will be present.\n"
+                      "Shuffling...\n")
                 time.sleep(2)
                 Deck_CurrentGame_Obj.append(Deck_TableDeck_Obj.pop(0))
                 shuffle(Deck_CurrentGame_Obj)
                 deckToTable()
-                seeCardOnTable()
-                return True
+                if Deck_TableDeck_Obj[0].wildType == "Wild Draw Four": #Check again because it can happen a second time again ...
+                    Deck_CurrentGame_Obj.append(Deck_TableDeck_Obj.pop(0))
+                    shuffle(Deck_CurrentGame_Obj)
+                    deckToTable()
+                return False
     else:
         return False
 
@@ -280,20 +287,29 @@ def checkActionCardsStartOfRound():
         #check if player has the Draw Two card present in hand and plays it.
         if any(Deck_TableDeck_Obj[0].actionType == card.actionType for card in Players_List[actualPlayer].playerHand):
             #cardIndex = Players_List[actualPlayer].playerHand.index(card)
-            print("You have one 'Draw Two' card that you can play. Play it.")
-            penaltySumDraw2 += 2
-            return False
+            userInput = input("If the penalty was already paid by the last player type: 'y': ")
+            if userInput == "y":
+                print("Thank you for your honesty,  proceeding...")
+                return False
+            else:
+                print("You have one 'Draw Two' card that you can play. Play it.")
+                penaltySumDraw2 += 2
+                return False
         else:
-            print(f"OOPS!! Card on table is {Deck_TableDeck_Obj[0].name}, pick up {penaltySumDraw2} cards from the main deck!\n")
+            print(f"OOPS!! Card on table is {Deck_TableDeck_Obj[0].name}.{indexPlayer.playerName} pick up {penaltySumDraw2} cards from the main deck!\n")
             time.sleep(2)
             indexPlayer.setPlayerHand(penaltySumDraw2)
             Deck_TableDeck_Obj[0].actionType = "None" #This way, the next player wont end up in this function again...
             penaltySumDraw2 = 2
             return True #if return true, will move to next player in while loop. cant do it here.
     elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four":
-        if Deck_TableDeck_Obj[0] in indexPlayer.playerHand:
+        if indexPlayer.personalBet == True:
+            #move to next step and turn Bet to False now.
+            indexPlayer.setPersonalBet(False)
+            return False
+        elif Deck_TableDeck_Obj[0] in indexPlayer.playerHand:
             print("You have one 'Wild Draw Four' that you can play.")
-            penaltySumDraw4 +=  4
+            penaltySumDraw4 += 4
             for card in indexPlayer.playerHand:
                 if card.wildType == "Wild Draw Four":
                     index = indexPlayer.playerHand.index(card)
@@ -316,11 +332,16 @@ def checkCardPlay(move):
         playerHandToTable(move)
         time.sleep(2)
     elif indexPlayer.playerHand[move].isAction == True:
-        if Deck_TableDeck_Obj[0].isAction == True:
-            if Deck_TableDeck_Obj[0].actionType == indexPlayer.playerHand[move].actionType:
-                print("DEBUG: Compatibility Check: actionType = True")
-                playerHandToTable(move)
-                time.sleep(2)
+        if indexPlayer.playerHand[move].actionType == Deck_TableDeck_Obj[0].actionType:
+            print("DEBUG: Compatibility Check: actionType = True")
+            playerHandToTable(move)
+            time.sleep(2)
+        elif indexPlayer.playerHand[move].color == Deck_TableDeck_Obj[0].color:
+            print("DEBUG: Compatibility Check: COLOR")
+            playerHandToTable(move)
+            time.sleep(2)
+        else:
+            moveFailed()
     elif indexPlayer.playerHand[move].color == Deck_TableDeck_Obj[0].color:
         print("DEBUG: Compatibility Check: COLOR")
         playerHandToTable(move)
@@ -330,35 +351,41 @@ def checkCardPlay(move):
         playerHandToTable(move)
         time.sleep(2)
     else:
-        print("You failed the move, go draw 1 card.")
-        time.sleep(2)
-        indexPlayer.setPlayerHand(1)
-        print(f"You draw 1 card from the deck. Is the card {indexPlayer.playerHand[-1].name}.")
-        time.sleep(2)
-        if indexPlayer.playerHand[-1].color == Deck_TableDeck_Obj[0].color:
-            userChoise = input("You got a compatible card! Want to use it now? (y/n)")
-            if userChoise == "y" or "Y":
-                playerHandToTable(-1)
-            else:
-                print("Moving to next Player")
-        elif indexPlayer.playerHand[-1].number == Deck_TableDeck_Obj[0].number:
-            userChoise = input("You got a compatible card! Want to use it now? (y/n)")
-            if userChoise == "y":
-                playerHandToTable(-1)
-            else:
-                print("Moving to next Player")
-        elif indexPlayer.playerHand[-1].isWild == True:
-            userChoise = input("You got a compatible card! Want to use it now? (y/n)")
-            if userChoise == "y":
-                playerHandToTable(-1)
-            else:
-                print("Moving to next Player")
+        moveFailed()
+
+def moveFailed():
+    global actualPlayer
+    indexPlayer = Players_List[actualPlayer]
+
+    print("You failed the move, go draw 1 card.")
+    time.sleep(2)
+    indexPlayer.setPlayerHand(1)
+    print(f"You draw 1 card from the deck. Is the card {indexPlayer.playerHand[-1].name}.")
+    time.sleep(2)
+    if indexPlayer.playerHand[-1].color == Deck_TableDeck_Obj[0].color:
+        userChoise = input("You got a compatible card! Want to use it now? (y/n)")
+        if userChoise == "y" or "Y":
+            playerHandToTable(-1)
         else:
-            if Deck_TableDeck_Obj[0].actionType == "Skip":
-                Deck_TableDeck_Obj[0].isAction == "False" #So the next player wont have to skip either
-            elif Deck_TableDeck_Obj[0].actionType == "Reverse":
-                Deck_TableDeck_Obj[0].isAction == "False" #So the next player wont have to skip either
-            print("The card you picked up is not eligible neither... Moving to Next Player.")
+            print("Moving to next Player")
+    elif indexPlayer.playerHand[-1].number == Deck_TableDeck_Obj[0].number:
+        userChoise = input("You got a compatible card! Want to use it now? (y/n)")
+        if userChoise == "y":
+            playerHandToTable(-1)
+        else:
+            print("Moving to next Player")
+    elif indexPlayer.playerHand[-1].isWild == True:
+        userChoise = input("You got a compatible card! Want to use it now? (y/n)")
+        if userChoise == "y":
+            playerHandToTable(-1)
+        else:
+            print("Moving to next Player")
+    else:
+        if Deck_TableDeck_Obj[0].actionType == "Skip":
+            Deck_TableDeck_Obj[0].actionType == "False" #So the next player wont have to skip either
+        elif Deck_TableDeck_Obj[0].actionType == "Reverse":
+            Deck_TableDeck_Obj[0].actionType == "False" #So the next player wont have to skip either
+        print("The card you picked up is not eligible neither... Moving to Next Player.")
 
 def checkActionCardsEndOfRound():
     global actualPlayer
@@ -374,8 +401,23 @@ def checkActionCardsEndOfRound():
     elif Deck_TableDeck_Obj[0].isWild == True:
         if Deck_TableDeck_Obj[0].wildType == "Wild":
             chooseNewColor()
-        elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four":
-            chooseNewColor()
+        elif Deck_TableDeck_Obj[0].wildType == "Wild Draw Four": #The player who plays the Wild Draw 4 can be challenged by the next player:
+            challenge = input(f"Player {Players_List[whoIsNextPlayer(actualPlayer)].playerName} do you want to challenge player {Players_List[actualPlayer].playerName}?")
+            if challenge == "y":
+                print(f"\nChecking if {Players_List[actualPlayer].playerName} is bluffing ...")
+                if any(Deck_TableDeck_Obj[1].color == card.color for card in Players_List[actualPlayer].playerHand):
+                    time.sleep(2)
+                    print(f"{Players_List[actualPlayer].playerName}, lost the challenge! Will receive 4 Cards as penalty!\n")
+                    Players_List[actualPlayer].setPlayerHand(4)
+                    print(f"The color will remain the same.")
+                    Deck_TableDeck_Obj[0].color = Deck_TableDeck_Obj[1].color
+                    Players_List[whoIsNextPlayer(actualPlayer)].setPersonalBet(True)
+                else:
+                    print(f"{Players_List[whoIsNextPlayer(actualPlayer)].playerName},lost the challenge! Go Draw 4 Cards Plus 2 for loosing the challenge!")
+                    Players_List[actualPlayer].setPersonalBet(False)
+                    chooseNewColor()
+            else:
+                chooseNewColor()
 
 #Player Turns:
 def nextPlayer():
@@ -449,22 +491,62 @@ def nextPlayer():
                 actualPlayer = Players_List[actualPlayer].playerID + increment[-1]
                 return actualPlayer
 
-def setUpGame(): #Setup the Decks, players, etc
-    #First - Deck Build:
-    createDeck()
-    convertCardToObject(Deck_CurrentGame, Deck_CurrentGame_Obj)
-    #Second - Create Players:
-    createPlayer(Deck_CurrentGame_Obj, Players_List)
-    #Third - Give Cards to Players:
-    for player in Players_List: player.setPlayerHand(7)
-    #Fourth - Put card on table:
-    deckToTable()
-    #                               name,        color, number, isAction, actionType, isWild, wildType)
-    # Deck_TableDeck_Obj.append(Card("|Red Skip|", "Red", None, True, "Skip", False, None))
-    #Seventh - Select first player to play by Age
-    lowestAge() # = index[0]
-    seeCardOnTable()
+def whoIsNextPlayer(player): #This is only used to calculate who will be the next player or who were the previous player.
+    global increment
+    listToIncrement = increment
+    lenOfList = len(Players_List)
+    if playingOrder == 1: #non reverse method
+        if skipOrder == True:
+            if player == lenOfList-1:
+                player = 1
+                return player
+            elif player == lenOfList-2:
+                player = 0
+                return player
+            else:
+                try:
+                    listToIncrement.append(2)
+                    player = Players_List[player].playerID + listToIncrement[-1]
+                    return player
+                except IndexError:
+                    player = 0
+                    return player
+        else:
+            if player == lenOfList-1:
+                player = 0
+                return player
+            else:
+                try:
+                    listToIncrement.append(1)
+                    player = Players_List[player].playerID + listToIncrement[-1]
+                    return player
+                except IndexError:
+                    player = -1
+                    return player
+    elif playingOrder == -1: # reverse method
+        if skipOrder == True:
+            if player == (lenOfList*-1)+1:
+                player = -1
+                return player
+            else:
+                try:
+                    listToIncrement.append(-2)
+                    player = Players_List[player].playerID + listToIncrement[-1]
+                    return player
+                except IndexError:
+                    player = -1
+                    listToIncrement.append(0)
+                    return player
+        else:
+            if player == (lenOfList * -1) + 1:
+                player = 0
+                return player
+            else:
+                listToIncrement.append(-1)
+                player = Players_List[player].playerID + listToIncrement[-1]
+                return player
 
+#Check Win & Scores:
 def sumCardPoints(PlayerHand):
     global PointsSum
     PointsSum = 0 #Reset the number for a new calculation
@@ -476,7 +558,7 @@ def sumCardPoints(PlayerHand):
         else:
             PointsSum += int(card.number)
     return PointsSum
-#Check Win:
+
 def checkWin():
     global PointsSum
     if len(Players_List[actualPlayer].playerHand) == 0:
@@ -492,7 +574,12 @@ def checkWin():
                 print(f"{player.playerName} has a total of {player.playerScore} points.")
         elif Players_List[actualPlayer].playerScore < 500:
             print(f"{Players_List[actualPlayer].playerName} wins the round! Starting a new round.")
-            #Reset the whole game with exception of the player details and scores. Player hand goes away as well.
+            for player in Players_List:
+                player.playerHand = []
+                player.setPlayerHand(7)
+            createDeck()
+            #missing all the global variables to be set to original values.
+
         PointsSum = 0
         return True
     elif len(Players_List[actualPlayer].playerHand) == 1:
@@ -504,6 +591,7 @@ def checkWin():
     else:
         return False
 
+#DashBoard Drawing
 def drawDashboard():
     print("-------- D A S H B O A R D ---------\n"
         f"\033[91mPlayer Round: {Players_List[actualPlayer].playerName}\n\033[0m"
@@ -511,26 +599,55 @@ def drawDashboard():
         f"Points of CIH (Cards in Hand):{sumCardPoints(Players_List[actualPlayer].playerHand)}\n"
         f"Playing Order: {playingOrder}\n"
         f"\033[1mCard in table:{Deck_TableDeck_Obj[0].name}\n\n\033[0m") #Prints in bold
-#--------------------------------------------------------------------------------------------------------------------
-setUpGame()#WORKKING
 
-if checkFirstCardOnPile() == True:
-    nextPlayer()
-else:
-    Players_List[actualPlayer].showPlayerHand()
-    move = int(input("Select a card to play: "))
-    checkCardPlay(move)
-    checkActionCardsEndOfRound()
-    nextPlayer()
+#User Input Error handling
+def errorHandling():
+    global move
+    while(True):
+        try:
+            move = int(input("Select a card to play:"))
+            break
+        except ValueError:
+            print("Select a number only accordingly with available:")
+
+#Config and Start the Game
+def setUpGame(): #Setup the Decks, players, etc
+    print("Welcome to UNO Game! Any bugs found, report to game admin.")
+    #First - Deck Build:
+    createDeck()
+    convertCardToObject(Deck_CurrentGame, Deck_CurrentGame_Obj)
+    #Second - Create Players:
+    createPlayer(Deck_CurrentGame_Obj, Players_List)
+    #Third - Give Cards to Players:
+    for player in Players_List: player.setPlayerHand(7)
+    #Fourth - Put card on table:
+    #deckToTable()
+    Deck_TableDeck_Obj.append(Card("|Blu Reverse|", "Blu", 0.12377282, True, "Reverse", False, None))
+    #Seventh - Select first player to play by Age
+    lowestAge() # = index[0]
+    if checkFirstCardOnPile() == True:
+        nextPlayer()
+    else:
+        seeCardOnTable()
+        Players_List[actualPlayer].showPlayerHand()
+        errorHandling()
+        checkCardPlay(move)
+        checkActionCardsEndOfRound()
+        nextPlayer()
+
+#--------------------------------------------------------------------------------------------------------------------
+setUpGame()#WORKING
+
 
 while(checkWin() == False):
     if checkActionCardsStartOfRound() == True:
         nextPlayer()
         continue
     Players_List[actualPlayer].showPlayerHand()
-    move = int(input("Select a card to play: "))
+    errorHandling()
     checkCardPlay(move)
     checkActionCardsEndOfRound()
     checkWin()
     nextPlayer()
     seeCardOnTable()
+    refillDeck() #Check if needs to refill the main deck.
