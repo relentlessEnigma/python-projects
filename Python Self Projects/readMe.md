@@ -1,6 +1,6 @@
 There is currently only 2 files in this repository.
 
-The Password Generator was a code written in a few hours.
+The Password Generator was a code written in one hour.
 You need to unlock the permissions in your gmail to send it, mainly the 2 factor authentication in your email should be disabled in order to work. 
 Only tested it with Gmail.
 
