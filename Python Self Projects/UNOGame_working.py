@@ -2,6 +2,7 @@ import time  # use only for debugging
 from random import shuffle
 from random import random
 
+#---------------------------------
 #Global Lists:
 Deck_Colors = ["|Red", "|Blu", "|Yel", "|Gre"]
 ActionCard = ["|Gre Skip|", "|Blu Skip|", "|Red Skip|", "|Yel Skip|", "|Gre Reverse|", "|Blu Reverse|", "|Red Reverse|", "|Yel Reverse|", "|Gre Draw Two|", "|Blu Draw Two|", "|Red Draw Two|", "|Yel Draw Two|"]
@@ -328,26 +329,21 @@ def checkCardPlay(move):
     indexPlayer = Players_List[actualPlayer]
 
     if indexPlayer.playerHand[move].isWild == True:
-        print("DEBUG: Compatibility Check: isWild = True")
         playerHandToTable(move)
         time.sleep(2)
     elif indexPlayer.playerHand[move].isAction == True:
         if indexPlayer.playerHand[move].actionType == Deck_TableDeck_Obj[0].actionType:
-            print("DEBUG: Compatibility Check: actionType = True")
             playerHandToTable(move)
             time.sleep(2)
         elif indexPlayer.playerHand[move].color == Deck_TableDeck_Obj[0].color:
-            print("DEBUG: Compatibility Check: COLOR")
             playerHandToTable(move)
             time.sleep(2)
         else:
             moveFailed()
     elif indexPlayer.playerHand[move].color == Deck_TableDeck_Obj[0].color:
-        print("DEBUG: Compatibility Check: COLOR")
         playerHandToTable(move)
         time.sleep(2)
     elif indexPlayer.playerHand[move].number == Deck_TableDeck_Obj[0].number:
-        print("DEBUG: Compatibility Check: NUMBER")
         playerHandToTable(move)
         time.sleep(2)
     else:
@@ -612,7 +608,9 @@ def errorHandling():
 
 #Config and Start the Game
 def setUpGame(): #Setup the Decks, players, etc
-    print("Welcome to UNO Game! Any bugs found, report to game admin.")
+    print("*----------------------------------------------------------*\n"
+          "*Welcome to UNO Game! Any bugs found, report to game admin.*\n"
+          "*----------------------------------------------------------*\n")
     #First - Deck Build:
     createDeck()
     convertCardToObject(Deck_CurrentGame, Deck_CurrentGame_Obj)
@@ -621,10 +619,10 @@ def setUpGame(): #Setup the Decks, players, etc
     #Third - Give Cards to Players:
     for player in Players_List: player.setPlayerHand(7)
     #Fourth - Put card on table:
-    #deckToTable()
-    Deck_TableDeck_Obj.append(Card("|Blu Reverse|", "Blu", 0.12377282, True, "Reverse", False, None))
+    deckToTable()
     #Seventh - Select first player to play by Age
     lowestAge() # = index[0]
+    drawDashboard()
     if checkFirstCardOnPile() == True:
         nextPlayer()
     else:
@@ -643,6 +641,7 @@ while(checkWin() == False):
     if checkActionCardsStartOfRound() == True:
         nextPlayer()
         continue
+    drawDashboard()
     Players_List[actualPlayer].showPlayerHand()
     errorHandling()
     checkCardPlay(move)
