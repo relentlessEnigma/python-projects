@@ -28,29 +28,36 @@ PointsSum = 0
 move = ""
 
 #Create Deck and Card Objects:
-def createDeck():
-    def createNumbersOnDeck(RangeMin, RangeMax, Ammount):  # Create Deck with numbers
-        for i in range(RangeMin, RangeMax):
-            for _ in range(Ammount):
-                for k in range(4):
-                    Deck_CurrentGame.append(Deck_Colors[k] + "  " + str(i) + "|")
-    def createActionCardsOnDeck(ACName, Ammount):  # Create Deck with Action Cards
-        for i in range(Ammount):
-            for k in range(4):
-                Deck_CurrentGame.append(Deck_Colors[k] + " " + ACName + "|")
-    def createWildCardsOnDeck(WCName, Ammount):  # Create Deck with Wild Cards
-        for i in range(Ammount):
-            Deck_CurrentGame.append("|" + WCName + "|")
-    def compileDeck():  # Compiles all the previous functions and builds and shuffles a deck
-        createNumbersOnDeck(1, 10, 2)  # Create Card "1" to "9" for each color
-        createActionCardsOnDeck(" 0", 1)  # Create Card "0" for each color (x1 time)
-        createActionCardsOnDeck("Draw Two", 2)  # Create Action Cards
-        createActionCardsOnDeck("Reverse", 2)  # Create Action Cards
-        createActionCardsOnDeck("Skip", 2)  # Create Action Cards
-        createWildCardsOnDeck("Wild", 4)  # Create Wild Cards
-        createWildCardsOnDeck("Wild Draw Four", 4)  # Create Wild Cards
-        shuffle(Deck_CurrentGame)  # Shuffle the deck
-    compileDeck()
+def createDeck() -> list:
+    # Define card colors and types
+    CARD_COLORS = ["Red", "Green", "Blue", "Yellow"]
+    CARD_TYPES = [
+        {"name": str(i), "count": 2, "format": "{}  {}|"},
+        {"name": " 0", "count": 1, "format": "{}{}|"},
+        {"name": "Draw Two", "count": 2, "format": "{} {}|"},
+        {"name": "Reverse", "count": 2, "format": "{} {}|"},
+        {"name": "Skip", "count": 2, "format": "{} {}|"},
+        {"name": "Wild", "count": 4, "format": "|{}|"},
+        {"name": "Wild Draw Four", "count": 4, "format": "|{}|"},
+    ]
+
+    # Create a new deck
+    deck = []
+
+    # Generate cards for each color and type
+    for color in CARD_COLORS:
+        for card_type in CARD_TYPES:
+            cards = [
+                card_type["format"].format(color, card_type["name"])
+                for _ in range(card_type["count"])
+            ]
+            deck.extend(cards)
+
+    # Shuffle the deck
+    shuffle(deck)
+
+    # Return the shuffled deck
+    return deck
 
 def refillDeck():
     i = 0
